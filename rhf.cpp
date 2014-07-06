@@ -59,8 +59,8 @@ static void error(const char *msg)
 
 static void usage(const char* name)
 {
-	printf("RHF: Ray Histogram Fusion Filter v1.0 Jul 2013\n");
-    printf("Copyright (c) 2013 M.Delbracio, P.Muse, A.Buades and JM.Morel\n\n");
+	printf("RHF: Ray Histogram Fusion Filter v1.1 Jun 2014\n");
+    printf("Copyright (c) 2014 M.Delbracio, P.Muse, A.Buades and JM.Morel\n\n");
 	printf("Usage: %s [options] <input file> <output file>\n"
 		   "Only EXR images are supported.\n\n",name);
 	printf("Options:\n");

@@ -1,6 +1,6 @@
 Ray Histogram Fusion
 ======================================================================
-Version 1.0 - July 31, 2013
+Version 1.1 - June 09, 2014
 
 by    Mauricio Delbracio <mdelbra@gmail.com>	
       Pablo Muse
@@ -71,7 +71,7 @@ Copyright and License
  
  RHF - Ray Histogram Fusion
  
- Copyright (c) 2013, A. Buades <toni.buades@uib.es>,
+ Copyright (c) 2014, A. Buades <toni.buades@uib.es>,
                      M. Delbracio <mdelbra@gmail.com>, 
                      J-M. Morel <morel@cmla.ens-cachan.fr>,
                      P. Muse <muse@fing.edu.uy>

@@ -42,7 +42,7 @@
 /*BEGIN ImageFilm Method Definitions by mdelbra 09.08.12 (histo)*/
 ImageFilmHisto::ImageFilmHisto(int xres, int yres, Filter *filt, const float crop[4],
                      const string &fn, bool openWindow,
-                     const string &histFn, int nB, float gam, float mVal)
+                     const string &histFn, int nB, float gam, float fMval, float fsval)
 : Film(xres, yres) {
     filter = filt;
     memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -52,7 +52,8 @@ ImageFilmHisto::ImageFilmHisto(int xres, int yres, Filter *filt, const float cro
     histFilename = histFn;
     nBins = nB;
     gamma = gam;
-    max_val = mVal;
+    Mval = fMval;
+    sval = fsval;
     
     // Compute film image extent
     xPixelStart = Ceil2Int(xResolution * cropWindow[0]);
@@ -142,12 +143,7 @@ void ImageFilmHisto::AddSample(const CameraSample &sample,
                 pixel.weightSum += filterWt;
                 
                 //Add to histogram contribution mdelbra 09.08.12
-                
-                //it's the same as weightSum; TODO check normalization
-                //pixels weights sum 1?
-                pixel.nsamples += filterWt; 
-                //pixel.nsamples += 1; 
-                
+                pixel.nsamples += filterWt;
                 
                 int ibL;
                 int ibH;
@@ -165,10 +161,10 @@ void ImageFilmHisto::AddSample(const CameraSample &sample,
                     if(gamma>1) v = pow(v,1/gamma);
                     
                     /*normalize to max_Vale*/
-                    if(max_val>0) v  = v/max_val;
+                    if(Mval>0) v  = v/Mval;
                     
                     /*Truncate to SATURE_LEVEL*/
-                    v = v>SATURE_LEVEL_GAMMA ? SATURE_LEVEL_GAMMA : v;
+                    v = v> sval ? sval : v;
                     
                     float fbin = v * (nBins-2);
                     
@@ -190,7 +186,7 @@ void ImageFilmHisto::AddSample(const CameraSample &sample,
                     }
                     else { //out of bounds... v >= 1
                         
-                        float wH = (v - 1.0f)/(SATURE_LEVEL_GAMMA - 1);
+                        float wH = (v - 1.0f)/(sval - 1);
                         
                         ibL = nBins-2;
                         wbL = 1.0f - wH;
@@ -236,10 +232,10 @@ void ImageFilmHisto::AddSample(const CameraSample &sample,
                     if(gamma>1) v = pow(v,1/gamma);
                     
                     /*normalize to max_Vale*/
-                    if(max_val>0) v  = v/max_val;
+                    if(Mval>0) v  = v/Mval;
                     
                     /*Truncate to SATURE_LEVEL*/
-                    v = v>SATURE_LEVEL_GAMMA ? SATURE_LEVEL_GAMMA : v;
+                    v = v>sval ? sval : v;
                     
                     float fbin = v * (nBins-2);
                     
@@ -261,7 +257,7 @@ void ImageFilmHisto::AddSample(const CameraSample &sample,
                     }
                     else { //out of bounds... v >= 1
                         
-                        float wH = (v - 1.0f)/(SATURE_LEVEL_GAMMA - 1);
+                        float wH = (v - 1.0f)/(sval - 1);
                         
                         ibL = nBins-2;
                         wbL = 1.0f - wH;
@@ -393,7 +389,8 @@ ImageFilmHisto *CreateImageFilmHisto(const ParamSet &params, Filter *filter) {
     string histfilename = params.FindOneString("histfilename", "");
     int    iBins   = params.FindOneInt("nbins", 20);
     float  fgamma  = params.FindOneFloat("gamma", 2.2f);
-    float  fmax_val = params.FindOneFloat("maxval", 2.5f);
+    float  fMval = params.FindOneFloat("M", 2.5f);
+    float  fsval = params.FindOneFloat("s", 2.0f);
 
     
     if (PbrtOptions.imageFile != "") {
@@ -437,7 +434,7 @@ ImageFilmHisto *CreateImageFilmHisto(const ParamSet &params, Filter *filter) {
 
     //Mode HISTO? mdelbra 11.06.12
     return new ImageFilmHisto(xres, yres, filter, crop, filename, openwin,
-                             histfilename, iBins, fgamma, fmax_val);
+                             histfilename, iBins, fgamma, fMval, fsval);
         
 }
 

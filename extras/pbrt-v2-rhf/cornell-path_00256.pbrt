@@ -23,7 +23,8 @@ Film "histo"
      "string histfilename" ["cornell-path_00256_hist.exr"]
      "integer nbins" [20]
      "float gamma" [2.2]
-     "float maxval" [2.5]
+     "float M" [2.5]
+     "float s" [2.0]
 
 
 WorldBegin

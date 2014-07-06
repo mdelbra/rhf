@@ -50,16 +50,14 @@ int main(int argc, char *argv[])
         
     }
         
-
-    data = ReadImageEXR(argv[1], &ncol, &nrow);
-    
+   data = ReadImageEXR(argv[1], &ncol, &nrow);
+        
     /*Rescale image to 0-255*/
     for(i=0;i<nrow*ncol*3;i++)
         data[i] = data[i]*255;
     
-    
 
-    io_png_write_f32(argv[2], data, (size_t) ncol, (size_t) nrow, 3);
+   io_png_write_f32(argv[2], data, (size_t) ncol, (size_t) nrow, 3);
     
     
     free(data);

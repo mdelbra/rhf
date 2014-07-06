@@ -36,11 +36,8 @@
 #ifndef PBRT_FILM_IMAGE_HISTO_H
 #define PBRT_FILM_IMAGE_HISTO_H
 
-//max number of hist: 30
-#define MAX_NUMBINS 21
-
-// Saturate Level for Gamma compression
-#define SATURE_LEVEL_GAMMA 2.0
+//Maximum number of bins
+#define MAX_NUMBINS 30
 
 // film/image.h*
 #include "pbrt.h"
@@ -56,7 +53,7 @@ public:
     ImageFilmHisto(int xres, int yres, Filter *filt, const float crop[4],
               const string &filename, bool openWindow,
               const string &histFilename, 
-              int nbins, float gamma, float max_val);
+              int nbins, float gamma, float fMval, float fsval);
     
     ~ImageFilmHisto() {
         delete pixels;
@@ -105,7 +102,8 @@ private:
     //Histogram Parameters
     int nBins;
     float gamma;
-    float max_val;
+    float Mval;
+    float sval;
     string histFilename;
 };
 

@@ -300,6 +300,9 @@ void rhf_knn(int iDWin,       // Half size of patch
     printf("---->rhf_knn: dmax = %f, k = %d\n", fDistance,knn);
     
 	
+    //k nearest neighbors + the current patch
+    int knnT = knn + 1;
+    
     // length of each channel
     int iwxh = iWidth * iHeight;
     
@@ -380,11 +383,11 @@ void rhf_knn(int iDWin,       // Half size of patch
                     }
                 
                 
-				compute_knn_index(knn, fDif_all, ovect_ind, dj*di);
+				compute_knn_index(knnT, fDif_all, ovect_ind, dj*di);
 				
                 //ALWAYS: select at least KNN similar patchs.
                 int kk;
-                for(kk=0;kk<knn;kk++)
+                for(kk=0;kk<knnT;kk++)
 				{
 					
                     fTotalWeight += fWeight;
@@ -412,7 +415,7 @@ void rhf_knn(int iDWin,       // Half size of patch
 				}
                 
                 /*SOMETIMES: select those patchs at distance < dmax*/
-                for (kk=knn;kk<dj*di;kk++)
+                for (kk=knnT;kk<dj*di;kk++)
                 {    
                     if (fDif_all[kk] < fDistance)
                     {
