@@ -1,8 +1,8 @@
 Ray Histogram Fusion
 ======================================================================
-Version 1.1 - June 09, 2014
+Version 1.2 - January 10, 2015
 
-by    Mauricio Delbracio <mdelbra@gmail.com>	
+by    Mauricio Delbracio <mdelbra@gmail.com>
       Pablo Muse
       Antoni Buades
       Jean-Michel Morel
@@ -42,11 +42,15 @@ Requirements
 ------------
 - OpenEXR for reading EXR images
 
+
 Compilation
 -----------
 Simply use the provided makefile, with the command `make`. You need to set
 the directory where the libraries: openEXR have the respective
 header and libraries files.
+
+In case OpenMP is available, you can compile with OpenMP 
+support with the command `make OMP=1`.
 
 Running
 -------
@@ -62,6 +66,10 @@ Options:
    -w <int>    Half the windows size (default: 1)
    -s <int>    Number of Scales - Multi-Scale (default: 2)
 
+
+A running Example
+
+./rhf toasters_00256.exr -h toasters_00256_hist.exr -d 0.8 toasters_filt.exr
 
 Please report bugs in RHF to <mdelbra@gmail.com>.
 

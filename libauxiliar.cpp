@@ -28,7 +28,6 @@
 
 
 
-
 void fpClear(float *fpI,float fValue, int iLength) {
     for (int ii=0; ii < iLength; ii++) fpI[ii] = fValue;
 }
@@ -92,7 +91,7 @@ float fiChiSquareNDfFloatDist(int *df, float **u0,float **u1,int i0,int j0,
  
 
 
-/*	
+/*    
 The functions gaussian_kernel, gaussian_kernel_notNorm and gaussian_sampler
 are based on those from the LSD algorithm.
 */
@@ -118,7 +117,7 @@ are based on those from the LSD algorithm.
  
  ----------------------------------------------------------------------------*/
 
-	
+    
 /*----------------------------------------------------------------------------*/
 /*----------------------------- Gaussian filter ------------------------------*/
 /*----------------------------------------------------------------------------*/
@@ -346,7 +345,6 @@ float** gaussian_sampler( float** in, int nx, int ny, int nch,
 
  
 
-/* NB : calling this module with out=in is possible */
 
 /* extract image value (even outside image domain) */
 float v(float *in, int x, int y, int nx, int ny, float bg)
@@ -414,7 +412,6 @@ float** bicubic_interpolation(float** in, int nx, int ny, int nch,
     for (x=0;x<nsx;x++) {
         
         xp = ( (float)x + 0.5 )/zx;
-       // xp = ( (float)x  )/zx;
         
         if (xp<0. || xp>(float)nx) 
             for (y=0;y<ny;y++) 
@@ -458,7 +455,6 @@ float** bicubic_interpolation(float** in, int nx, int ny, int nch,
         for (y=0;y<nsy;y++) {
             
             yp = ( (float)y + 0.5 )/zy;
-            //yp = ((float)y )/zy;
             
             if (yp<0. || yp>(float)ny) 
                 for (x=0;x<nsx;x++) 
@@ -506,7 +502,7 @@ float** bicubic_interpolation(float** in, int nx, int ny, int nch,
 int compute_filter_mask(float** in, int x, int y, int nx, int ny, int nch)
 {
     
-    //Suppose RGB Channels!
+    //Assume RGB Channels!
     int nc = (nch-1)/3;
     int mask = 0;
     
@@ -549,50 +545,50 @@ int compute_filter_mask(float** in, int x, int y, int nx, int ny, int nch)
 
 void compute_knn_index(int k, float *ivect_dist, int *ovect_ind,  int n)
 {
-	
-	int *ind = new int[n];
-	
-	for (int i=0;i<n;i++)
-		ind[i] = i;
-	
-	
-	float minv;
-	int minind;
-	
-	/*Outer Loop*/
-	for(int i=0; i<k; i++)
-	{
-		
-		minv = ivect_dist[i]; /*Big Number*/
-		minind = i;
-		
-		/*inner loop: find minimum value*/
-		for(int j=i+1; j<n; j++)
-		{
-			if (ivect_dist[j] < minv) 
-			{
-				minv = ivect_dist[j];
-				minind = j;
-			}
-			
-		}
-		
-		/*Swap index*/
-		int ind_aux = ind[i];
-		ind[i] = ind[minind];
-		ind[minind] = ind_aux;
-		
-		/*Swap values*/
-		float val_aux = ivect_dist[i];
-		ivect_dist[i] = ivect_dist[minind];
-		ivect_dist[minind] = val_aux;
-		
-	}
-	//Return all the indices also the part no sorted
-	for(int i=0;i < n; i++)
-		ovect_ind[i] = ind[i];
     
-	delete[] ind;
-	
+    int *ind = new int[n];
+    
+    for (int i=0;i<n;i++)
+        ind[i] = i;
+    
+    
+    float minv;
+    int minind;
+    
+    /*Outer Loop*/
+    for(int i=0; i<k; i++)
+    {
+        
+        minv = ivect_dist[i]; /*Big Number*/
+        minind = i;
+        
+        /*inner loop: find minimum value*/
+        for(int j=i+1; j<n; j++)
+        {
+            if (ivect_dist[j] < minv) 
+            {
+                minv = ivect_dist[j];
+                minind = j;
+            }
+            
+        }
+        
+        /*Swap index*/
+        int ind_aux = ind[i];
+        ind[i] = ind[minind];
+        ind[minind] = ind_aux;
+        
+        /*Swap values*/
+        float val_aux = ivect_dist[i];
+        ivect_dist[i] = ivect_dist[minind];
+        ivect_dist[minind] = val_aux;
+        
+    }
+    //Return all the indices also the part no sorted
+    for(int i=0;i < n; i++)
+        ovect_ind[i] = ind[i];
+    
+    delete[] ind;
+    
 }
 

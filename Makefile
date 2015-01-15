@@ -1,28 +1,39 @@
 # RHF Makefile 3 Jun 2014 
-#by mdelbra
+# by mdelbra
 
-# GNU GCC (OPENMP support)
-CC=gcc-4.8
-CXX=g++-4.8
+# Standard CC
+CC=cc
+CXX=c++
+
+#By default no OMP
+#OMP=0
 
 # C optimization flags
-COPT	= -O3 -fopenmp  -Wall
+COPT	= -O3 -Wall
+
+# Linking flags
+LDFLAGS   =  -lIlmImf -lHalf -lpng
+
+ifeq (${OMP},1)
+    COPT += -fopenmp
+    LDFLAGS += -fopenmp
+endif
 
 # Lib PNG
 PNG_INCLUDE=/usr/local/include
 PNG_LIB=/usr/local/lib
 
 # OpenEXR
-EXR_INCLUDE=/usr/local/include/OpenEXR
+EXR_INCLUDE1=/usr/local/include/OpenEXR
+EXR_INCLUDE2=/usr/include/OpenEXR/
 EXR_LIB=/usr/local/lib
 
 # C++ optimization flags
 CXXOPT	= $(COPT)
 
-CFLAGS    = $(COPT) -I${EXR_INCLUDE} -I${PNG_INCLUDE}
-CXXFLAGS  = $(CXXOPT)  -I${EXR_INCLUDE} -I${PNG_INCLUDE}
+CFLAGS    = $(COPT) -I${EXR_INCLUDE1} -I${EXR_INCLUDE2} -I${PNG_INCLUDE}
+CXXFLAGS  = $(CXXOPT) -I${EXR_INCLUDE1} -I${EXR_INCLUDE2} -I${PNG_INCLUDE}
 
-LDFLAGS   =  -fopenmp -lIlmImf -lHalf -lpng
 EXEC      = rhf exrdiff exrcrop exrtopng
 
 default: all

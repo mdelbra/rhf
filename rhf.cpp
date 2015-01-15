@@ -3,9 +3,9 @@
  RHF - Ray Histogram Fusion
  
  Copyright (c) 2013, A. Buades <toni.buades@uib.es>,
-                     M. Delbracio <mdelbra@gmail.com>, 
-                     J-M. Morel <morel@cmla.ens-cachan.fr>,
-                     P. Muse <muse@fing.edu.uy>
+ M. Delbracio <mdelbra@gmail.com>,
+ J-M. Morel <morel@cmla.ens-cachan.fr>,
+ P. Muse <muse@fing.edu.uy>
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as
@@ -23,13 +23,67 @@
  ----------------------------------------------------------------------------*/
 
 
+/**
+ * @file rhf.cpp
+ * @brief RHF filter.
+ * @author Mauricio Delbracio  (mdelbra@gmail.com)
+ */
+
+
+/** @mainpage Accelerating Monte Carlo Renderers by Ray Histogram Fusion
+ *
+ * The following is an implementation of the Ray Histogram Fusion filter
+ * presented in
+ *
+ *
+ * \li Delbracio, M., Musé, P., Buades, A., Chauvier, J., Phelps, N. & Morel, J.M. <br>
+ *  "Boosting Monte Carlo rendering by ray histogram fusion" <br>
+ *  ACM Transactions on Graphics (TOG), 33(1), 8. 2014
+ *
+ * and in more detail described on the online journal IPOL (www.ipol.im)
+ * where there is much more information, including this code and an
+ * online demo version.
+ *
+ *
+ * The source code consists of:
+ *
+ * \li  COPYING
+ * \li  Makefile
+ * \li  README.txt
+ * \li  VERSION
+ * \li  exrcrop.cpp
+ * \li  exrdiff.cpp
+ * \li  exrtopng.cpp
+ * \li  io_exr.cpp
+ * \li  io_exr.h
+ * \li  io_png.c
+ * \li  io_png.h
+ * \li  libauxiliar.cpp
+ * \li  libauxiliar.h
+ * \li  libdenoising.cpp
+ * \li  libdenoising.h
+ * \li  rhf.cpp
+ * \li  extras/pbrt-v2-rhf (A modified version of PBRT-v2)
+ *
+ *
+ * HISTORY:
+ * - Version 1.2 - January 10, 2015
+ * - Version 1.1 - June 09, 2014
+ *
+ *
+ * @author mauricio delbracio (mdelbra@gmail.com)
+ * @date jan 2015
+ */
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "libdenoising.h"
 #include "io_exr.h"
-
 
 /** @brief Struct of program parameters */
 typedef struct
@@ -56,23 +110,21 @@ static void error(const char *msg)
 }
 
 
-
 static void usage(const char* name)
 {
-	printf("RHF: Ray Histogram Fusion Filter v1.1 Jun 2014\n");
+    printf("RHF: Ray Histogram Fusion Filter v1.1 Jun 2014\n");
     printf("Copyright (c) 2014 M.Delbracio, P.Muse, A.Buades and JM.Morel\n\n");
-	printf("Usage: %s [options] <input file> <output file>\n"
-		   "Only EXR images are supported.\n\n",name);
-	printf("Options:\n");
+    printf("Usage: %s [options] <input file> <output file>\n"
+           "Only EXR images are supported.\n\n",name);
+    printf("Options:\n");
     printf("   -h <hist>   The filename with the histogram\n");
     printf("   -d <float>  Max-distance between patchs\n");
     printf("   -k <int>    Minimum number of similar patchs (default: 2)\n");
     printf("   -b <int>    Half the block size  (default: 6)\n");
-	printf("   -w <int>    Half the windows size (default: 1)\n");
- 	printf("   -s <int>    Number of Scales - Multi-Scale (default: 2)\n");
+    printf("   -w <int>    Half the windows size (default: 1)\n");
+    printf("   -s <int>    Number of Scales - Multi-Scale (default: 2)\n");
     
 }
-
 
 static void parse_arguments(program_argums *param, int argc, char *argv[])
 {
@@ -86,7 +138,6 @@ static void parse_arguments(program_argums *param, int argc, char *argv[])
         usage(argv[0]);
         exit(EXIT_SUCCESS);
     }
-    
     
     /* loop to read parameters*/
     for(i = 1; i < argc;)
@@ -191,14 +242,14 @@ static void parse_arguments(program_argums *param, int argc, char *argv[])
     
     /* If parameters weren't set, set deafult parameters*/
     param->bloc = param->bloc>=0 ? param->bloc : 6;
-    param->win = param->win>=0 ? param->win : 1;    
+    param->win = param->win>=0 ? param->win : 1;
     param->knn = param->knn>=0 ? param->knn : 2;
     param->nscales = param->nscales>0 ? param->nscales:2;
     
     /*Check parameters are consistent*/
     if(param->max_distance<0)  error("Parameter max_distance not set.\n");
     
-    printf("Loadad Parameters\n");
+    printf("Loaded Parameters\n");
     printf("-----------------\n");
     printf("Number of scales: %d\n", param->nscales);
     printf("      block size: %d\n", param->bloc);
@@ -211,11 +262,7 @@ static void parse_arguments(program_argums *param, int argc, char *argv[])
 }
 
 
-// usage: nlmeans_ipol image sigma noisy denoised
-
 int main(int argc, char **argv) {
-    
-    
     
     /*Initialize the structure param->* to -1 or null */
     program_argums param = {-1,-1, -1,NULL, NULL, NULL, -1, -1,0};
@@ -223,13 +270,11 @@ int main(int argc, char **argv) {
     /*Parse command-line arguments*/
     parse_arguments(&param,argc,argv);
     
-    
     int nx,ny,nc;
     float *d_v = NULL;
     
     d_v = ReadImageEXR(param.input, &nx, &ny);
-    nc = 3;
-    
+    nc = 3; //Assume 3 color channels
     
     
     if (!d_v) {
@@ -277,36 +322,46 @@ int main(int argc, char **argv) {
         
     }
     
-    
     //-Read Histogram image----------------------------------------------------
     int nx_h, ny_h, nc_h;
     float *fpH = NULL;
     
-    
     fpH = readMultiImageEXR(param.hist_file,
                             &nx_h, &ny_h, &nc_h);
-    //printf("Total Number of bins in Histogram: %d\n",nc_h-1);
     
     
     float **fpHisto = new float*[nc_h];
-    for (int ii=0; ii < nc_h; ii++) 
+    for (int ii=0; ii < nc_h; ii++)
         fpHisto[ii] = &fpH[ii * nx_h*ny_h];
     
+    //Measure Filtering time
+    struct timeval tim;
+    gettimeofday(&tim, NULL);
+    double t1=tim.tv_sec+(tim.tv_usec/1000000.0);
     
     printf("Running...\n");
-    rhf_multiscale(param.win, 
+    rhf_multiscale(param.win,
                    param.bloc,
                    param.max_distance,
                    param.knn,
                    param.nscales,
-                   fpHisto, 
+                   fpHisto,
                    fpI, fpO, d_c, d_w, d_h, nc_h);
     
-    
+    gettimeofday(&tim, NULL);
+    double t2=tim.tv_sec+(tim.tv_usec/1000000.0);
+    printf("Filtering Time: %.2lf seconds\n", t2-t1);
+
     
     // save EXR denoised image
     WriteImageEXR(param.output, denoised, d_w, d_h);
     
+    delete[] fpHisto;
+    delete[] fpH;
+    delete[] fpI;
+    delete[] fpO;
+    delete[] d_v;
+    delete[] denoised;
     
     return 0;
     

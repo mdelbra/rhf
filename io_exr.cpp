@@ -40,18 +40,18 @@ using namespace Imath;
 // EXR Function Definitions
 struct sRGB
 {
-	float r, g, b;
+    float r, g, b;
 };
 
 
-float  *ReadImageEXR(const char *name, int *nx, int *ny)
+float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
 {
     
     
     try {
         // Open EXR file
         
-        InputFile file (name);
+        InputFile file (fileName);
         
         // Get image dimensions.
         Box2i dw = file.header().dataWindow();
@@ -72,7 +72,6 @@ float  *ReadImageEXR(const char *name, int *nx, int *ny)
         // the Slice method flexibility to directly read R, G and B data in an
         // interlaced manner, using appropriate x & y stride values.
         FrameBuffer frameBuffer;
-        
         
         frameBuffer.insert("R", Slice(FLOAT, (char*)(&pixelsR[0] -
                                                      dw.min.x - dw.min.y*width),
@@ -124,7 +123,7 @@ float  *ReadImageEXR(const char *name, int *nx, int *ny)
     }
     
     catch (const std::exception &e) {
-        printf("Error reading file: %s\n",name);
+        printf("Error reading file: %s\n",fileName);
         exit(-1);
     }
     
@@ -147,8 +146,7 @@ void WriteImageEXR(const char *name, float *pixels,
     Rgba *hrgba = new Rgba[xRes * yRes];
     for (int i = 0; i < xRes * yRes; ++i)
     {
-      //  hrgba[i] = Rgba(pixels[3*i], pixels[3*i+1], pixels[3*i+2],
-      //                  alpha ? alpha[i]: 1.f);
+
         hrgba[i] = Rgba(pixels[i], pixels[i+xRes*yRes],pixels[i+2*xRes*yRes],
                         alpha ? alpha[i]: 1.f);
                         
@@ -186,8 +184,7 @@ void WriteImageEXR(const char *name, float **pixels,
     Rgba *hrgba = new Rgba[xRes * yRes];
     for (int i = 0; i < xRes * yRes; ++i)
     {
-        //  hrgba[i] = Rgba(pixels[3*i], pixels[3*i+1], pixels[3*i+2],
-        //                  alpha ? alpha[i]: 1.f);
+
         hrgba[i] = Rgba(pixels[0][i], pixels[1][i],pixels[2][i],
                         alpha ? alpha[i]: 1.f);
         
@@ -312,14 +309,12 @@ float * readMultiImageEXR(const char fileName[],
         
         const ChannelList &channelList = file.header().channels();
         
-        //zPixels.resizeErase (height, width);
-        
         FrameBuffer frameBuffer;
         
         char ch_name[10];
         int nbin =0;
         sprintf(ch_name,"Bin_%04d",nbin);
-        //printf("%s\n",ch_name);
+
         const Channel *channelPtr = channelList.findChannel(ch_name);
         
         
@@ -332,14 +327,13 @@ float * readMultiImageEXR(const char fileName[],
         }
         
         
-        //malloc for the whole array
-        data = (float*) malloc(nhnc*nbin*sizeof(float));
+        //reserve memory for the whole array
+        data = new float[nhnc*nbin];
         
         
         for(int i=0;i<nbin;i++)
         {        
             sprintf(ch_name,"Bin_%04d",i);
-            // printf("%s\n",ch_name);
             
             frameBuffer.insert(ch_name, 
                                Slice(FLOAT, 
