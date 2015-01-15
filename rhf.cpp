@@ -32,8 +32,8 @@
 
 /** @mainpage Accelerating Monte Carlo Renderers by Ray Histogram Fusion
  *
- * The following is an implementation of the Ray Histogram Fusion filter
- * presented in
+ * The following code is an implementation of the Ray Histogram Fusion (RHF)
+ * filter presented in
  *
  *
  * \li Delbracio, M., Musé, P., Buades, A., Chauvier, J., Phelps, N. & Morel, J.M. <br>
@@ -41,7 +41,7 @@
  *  ACM Transactions on Graphics (TOG), 33(1), 8. 2014
  *
  * and in more detail described on the online journal IPOL (www.ipol.im)
- * where there is much more information, including this code and an
+ * where there is a more precise algorithm description, including this code and an
  * online demo version.
  *
  *
@@ -65,6 +65,9 @@
  * \li  rhf.cpp
  * \li  extras/pbrt-v2-rhf (A modified version of PBRT-v2)
  *
+ *
+ *
+ * The core of the filtering algorithm is in libdenoising.cpp.
  *
  * HISTORY:
  * - Version 1.2 - January 10, 2015
@@ -110,6 +113,9 @@ static void error(const char *msg)
 }
 
 
+/** @brief Print program's usage and exit.
+ *  @param args
+ */
 static void usage(const char* name)
 {
     printf("RHF: Ray Histogram Fusion Filter v1.1 Jun 2014\n");
