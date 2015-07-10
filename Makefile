@@ -12,7 +12,7 @@ CXX=c++
 COPT	= -O3 -Wall
 
 # Linking flags
-LDFLAGS   =  -lIlmImf -lHalf -lpng
+LDFLAGS   =  -lIlmImf -lHalf -lpng -pthread
 
 ifeq (${OMP},1)
     COPT += -fopenmp
