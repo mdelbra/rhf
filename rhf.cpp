@@ -156,7 +156,7 @@ static void usage(const char* name)
 
 static void parse_arguments(program_argums *param, int argc, char *argv[])
 {
-    char *OptionString;
+    char *OptionString = NULL;
     char OptionChar;
     int i;
     

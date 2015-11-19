@@ -102,7 +102,7 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
             file.readPixels (dw.min.y, dw.max.y);
             
         }
-        catch (const std::exception &e) {
+        catch (const std::exception &) {
             data = NULL;
         }
         
@@ -122,7 +122,7 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
         return data;
     }
     
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         printf("Error reading file: %s\n",fileName);
         exit(-1);
     }
@@ -350,7 +350,7 @@ float * readMultiImageEXR(const char fileName[],
             file.readPixels (dw.min.y, dw.max.y);
             
         }
-        catch (const std::exception &e) {
+        catch (const std::exception &) {
             data = NULL;
         }
         
@@ -359,7 +359,7 @@ float * readMultiImageEXR(const char fileName[],
         return data;
         
     }
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         printf("Error reading file: %s\n",fileName);
         exit(-1);
     }

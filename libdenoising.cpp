@@ -86,7 +86,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
             fhIs = gaussian_sampler(fhI,
                                     iWidth, iHeight, iBins,
                                     &nxS, &nyS,
-                                    scale, sigma_scale);
+                                    (float)scale, (float)sigma_scale);
             
             //Renormalize weights to keep total number of samples
             double dtotalS = 0;
@@ -94,7 +94,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
             {
                 dtotalS += fhIs[iBins-1][ii];
             }
-            float samples_factor = (dtotal/dtotalS);
+            float samples_factor = (float)(dtotal/dtotalS);
             
             for(int ii=0; ii < nxS*nyS; ii++)
             {
@@ -105,7 +105,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
             fpIs = gaussian_sampler(fpI,
                                     iWidth, iHeight, iChannels,
                                     &nxS, &nyS,
-                                    scale, sigma_scale);
+                                    (float)scale, (float)sigma_scale);
         }
         else
         {
@@ -166,7 +166,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
             fpOs_NegTermD = gaussian_sampler(fpOs,
                                              nxS, nyS, iChannels,
                                              &nxM, &nyM,
-                                             0.5f,    sigma_scale);
+                                             0.5f,    (float)sigma_scale);
             
             fpOs_NegTerm = bicubic_interpolation(fpOs_NegTermD, nxM, nyM,
                                                  iChannels, nxS, nyS);
@@ -334,7 +334,7 @@ void rhf_knn(int iDWin,       // Half size of patch
                                                                  iWidth,
                                                                  iWidth);
                         
-                        fDif_all[(j-jmin)+(i-imin)*dj] = fDifHist/(df+EPSILON);
+                        fDif_all[(j-jmin)+(i-imin)*dj] = fDifHist/(df+(float)EPSILON);
                         
                     }
                 
