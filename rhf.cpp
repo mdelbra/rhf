@@ -302,7 +302,10 @@ int main(int argc, char **argv) {
     float *d_v = NULL;
     
     float *alpha = NULL;
-    d_v = ReadImageEXR(param.input, &nx, &ny, alpha);
+    Imath::Box2i dataWindow, displayWindow;
+    d_v = ReadImageEXR(param.input, dataWindow, displayWindow, alpha);
+    nx = dataWindow.max.x - dataWindow.min.x + 1;
+    ny = dataWindow.max.y - dataWindow.min.y + 1;
 
     // Divide colors by alpha, could be controlled by a new parameter
     if (alpha)
@@ -363,6 +366,12 @@ int main(int argc, char **argv) {
     fpH = readMultiImageEXR(param.hist_file,
                             &nx_h, &ny_h, &nc_h);
     
+    if (dataWindow.max.x - dataWindow.min.x + 1 != nx_h ||
+        dataWindow.max.y - dataWindow.min.y + 1 != ny_h)
+    {
+        error ("The histogram file and the input file don't have the same data window.");
+        exit (-1);
+    }
     
     float **fpHisto = new float*[nc_h];
     for (int ii=0; ii < nc_h; ii++)
@@ -392,7 +401,7 @@ int main(int argc, char **argv) {
     
     // save EXR denoised image
     const int channelStride = d_c == 1 ? 0 : d_w*d_h;
-    WriteImageEXR(param.output, denoised, alpha, d_w, d_h, channelStride);
+    WriteImageEXR(param.output, denoised, alpha, dataWindow, displayWindow, channelStride);
 
     delete[] fpHisto;
     delete[] fpH;
