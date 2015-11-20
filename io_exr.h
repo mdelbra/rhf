@@ -31,7 +31,7 @@
 float  *ReadImageEXR(const char fileName[], int *nx, int *ny);
 
 void WriteImageEXR(const char *name, float *pixels,
-                          int xRes, int yRes);
+                          int xRes, int yRes, int channelStride);
 
 void WriteImageEXR(const char *name, float **pixels,
                    int xRes, int yRes);

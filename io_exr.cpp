@@ -132,7 +132,7 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
 
 
 void WriteImageEXR(const char *name, float *pixels,
-                          int xRes, int yRes)
+                          int xRes, int yRes, int channelStride)
 {
     
     //this can be a parameter to gerneralize the function
@@ -147,7 +147,7 @@ void WriteImageEXR(const char *name, float *pixels,
     for (int i = 0; i < xRes * yRes; ++i)
     {
 
-        hrgba[i] = Rgba(pixels[i], pixels[i+xRes*yRes],pixels[i+2*xRes*yRes],
+        hrgba[i] = Rgba(pixels[i], pixels[i+channelStride],pixels[i+2*channelStride],
                         alpha ? alpha[i]: 1.f);
                         
     }

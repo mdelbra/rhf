@@ -382,7 +382,9 @@ int main(int argc, char **argv) {
 
     
     // save EXR denoised image
-    WriteImageEXR(param.output, denoised, d_w, d_h);
+    const int channelStride = d_c == 1 ? 0 : d_w*d_h;
+    WriteImageEXR(param.output, denoised, d_w, d_h, channelStride);
+
     
     delete[] fpHisto;
     delete[] fpH;
