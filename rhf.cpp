@@ -301,7 +301,13 @@ int main(int argc, char **argv) {
     int nx,ny,nc;
     float *d_v = NULL;
     
-    d_v = ReadImageEXR(param.input, &nx, &ny);
+    float *alpha = NULL;
+    d_v = ReadImageEXR(param.input, &nx, &ny, alpha);
+
+    // Divide colors by alpha, could be controlled by a new parameter
+    if (alpha)
+        alpha_div (d_v, alpha, nx*ny);
+
     nc = 3; //Assume 3 color channels
     
     
@@ -374,24 +380,27 @@ int main(int argc, char **argv) {
                    param.knn,
                    param.nscales,
                    fpHisto,
-                   fpI, fpO, d_c, d_w, d_h, nc_h);
+                   fpI, fpO, alpha, d_c, d_w, d_h, nc_h);
     
     gettimeofday(&tim, NULL);
     double t2=tim.tv_sec+(tim.tv_usec/1000000.0);
     printf("Filtering Time: %.2lf seconds\n", t2-t1);
 
+    // Multiply colors by alpha
+    if (alpha)
+        alpha_mul (denoised, alpha, d_w*d_h);
     
     // save EXR denoised image
     const int channelStride = d_c == 1 ? 0 : d_w*d_h;
-    WriteImageEXR(param.output, denoised, d_w, d_h, channelStride);
+    WriteImageEXR(param.output, denoised, alpha, d_w, d_h, channelStride);
 
-    
     delete[] fpHisto;
     delete[] fpH;
     delete[] fpI;
     delete[] fpO;
     delete[] d_v;
     delete[] denoised;
+    delete[] alpha;
     
     return 0;
     

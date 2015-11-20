@@ -50,6 +50,7 @@ void rhf_knn(int iDWin,            // Half size of patch
              float **fhI,          // Histogram
              float **fpI,          // Input
              float **fpO,          // Output
+             float *alpha,         // Alpha channel, can be NULL
              int iChannels, int iWidth,int iHeight, int iBins);
 
 
@@ -75,6 +76,7 @@ void rhf(int iDWin,            // Half size of patch
          float **fhI,          // Histogram
          float **fpI,          // Input
          float **fpO,          // Output
+         float *alpha,         // Alpha channel, can be NULL
          int iChannels, int iWidth,int iHeight, int iBins);
 
 
@@ -103,6 +105,7 @@ void rhf_multiscale(int iDWin,            // Half size of patch
                     float **fhI,          // Histogram
                     float **fpI,          // Input
                     float **fpO,          // Output
+                    float *alpha,         // Alpha channel, can be NULL
                     int iChannels, int iWidth,int iHeight, int iBins);
 
 

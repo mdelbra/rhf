@@ -39,6 +39,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
                     float **fhI,     // Histogram
                     float **fpI,     // Input
                     float **fpO,     // Output
+                    float *alpha,    // Alpha channel, can be NULL
                     int iChannels,   // Number of channels
                     int iWidth,      // Image width
                     int iHeight,     // Image height
@@ -135,6 +136,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
                     fhIs,        // Histogram
                     fpIs,        // Input
                     fpOs,        // Output
+                    alpha,       // Alpha
                     iChannels, nxS, nyS, iBins);
         }
         else
@@ -145,6 +147,7 @@ void rhf_multiscale(int iDWin,       // Half size of patch
                 fhIs,       // Histogram
                 fpIs,       // Input
                 fpOs,       // Output
+                alpha,      // Alpha
                 iChannels, nxS, nyS, iBins);
         }
         
@@ -250,6 +253,7 @@ void rhf_knn(int iDWin,       // Half size of patch
              float **fhI,     // Histogram Image
              float **fpI,     // Input image
              float **fpO,     // Output image
+             float *alpha,    // Alpha channel, can be NULL
              int iChannels,   // Number of channels
              int iWidth,      // Image width
              int iHeight,     // Image height
@@ -278,7 +282,7 @@ void rhf_knn(int iDWin,       // Half size of patch
     
     // PROCESS STARTS
     // for each pixel (x,y)
-#pragma omp parallel shared(fpI, fpO)
+#pragma omp parallel shared(fpI, fpO, alpha)
     {
         
 #pragma omp for schedule(dynamic) nowait
@@ -290,6 +294,7 @@ void rhf_knn(int iDWin,       // Half size of patch
             float **fpODenoised = new float*[iChannels];
             for (int ii=0; ii < iChannels; ii++)
                 fpODenoised[ii] = new float[iwl];
+            float *fTotalWeight = new float[iwl];
             
             for (int x=0 ; x < iWidth;  x++) {
                 
@@ -309,12 +314,10 @@ void rhf_knn(int iDWin,       // Half size of patch
                 for (int ii=0; ii < iChannels; ii++)
                     fpClear(fpODenoised[ii], 0.0f, iwl);
                 
+                
                 /*Check if we need to denoise this pixel!!*/
                 // sum of weights
-                float fTotalWeight = 0.0f;
-                
-                // weights
-                float fWeight = 1.0f;
+                fpClear(fTotalWeight, 0.0f, iwl);
                 
                 int dj = jmax-jmin+1;
                 int di = imax-imin+1;
@@ -344,9 +347,6 @@ void rhf_knn(int iDWin,       // Half size of patch
                 int kk;
                 for(kk=0;kk<knnT;kk++)
                 {
-                    
-                    fTotalWeight += fWeight;
-                    
                     //Reconvert index
                     int i = ovect_ind[kk]/dj + imin;
                     int j = ovect_ind[kk]%dj + jmin;
@@ -360,8 +360,10 @@ void rhf_knn(int iDWin,       // Half size of patch
                             int iindex = aiindex + ir;
                             int il= ail +ir;
                             
+                            const float weight = alpha ? alpha[il] : 1.f;
+                            fTotalWeight[iindex] += weight;
                             for (int ii=0; ii < iChannels; ii++)
-                                fpODenoised[ii][iindex] +=  fWeight*fpI[ii][il];
+                                fpODenoised[ii][iindex] += weight*fpI[ii][il];
                         }
                     }
                 }
@@ -371,9 +373,6 @@ void rhf_knn(int iDWin,       // Half size of patch
                 {
                     if (fDif_all[kk] < fDistance)
                     {
-                        
-                        fTotalWeight += fWeight;
-                        
                         int i = ovect_ind[kk]/dj + imin;
                         int j = ovect_ind[kk]%dj + jmin;
                         
@@ -386,9 +385,10 @@ void rhf_knn(int iDWin,       // Half size of patch
                                 int iindex = aiindex + ir;
                                 int il= ail +ir;
                                 
+                                const float weight = alpha ? alpha[il] : 1.f;
+                                fTotalWeight[iindex] += weight;
                                 for (int ii=0; ii < iChannels; ii++)
-                                    fpODenoised[ii][iindex] +=
-                                    fWeight*fpI[ii][il];
+                                	fpODenoised[ii][iindex] += weight*fpI[ii][il];
                             }
                         }
                     }
@@ -404,14 +404,13 @@ void rhf_knn(int iDWin,       // Half size of patch
                         int iindex = aiindex + ir;
                         int il=ail+ ir;
                         
+                        const float weight = fTotalWeight[iindex];
 #pragma omp atomic
                         fpCount[il]++;
-                        
                         for (int ii=0; ii < iChannels; ii++) {
 #pragma omp atomic
                             
-                            fpO[ii][il] += fpODenoised[ii][iindex]/fTotalWeight;
-                            
+                            fpO[ii][il] += weight == 0.f ? 0.f : fpODenoised[ii][iindex]/weight;
                         }
                     }
                 }
@@ -424,6 +423,7 @@ void rhf_knn(int iDWin,       // Half size of patch
             
             for (int ii=0; ii < iChannels; ii++) delete[] fpODenoised[ii];
             delete[] fpODenoised;
+            delete[] fTotalWeight;
             
         }//yloop end
     }//pragma end
@@ -442,13 +442,13 @@ void rhf_knn(int iDWin,       // Half size of patch
     
 }
 
-
 void rhf(int iDWin,        // Half size of patch
          int iDBloc,       // Half size of research window
          float fDistance,  // Max-Distance parameter
          float **fhI,      // Histogram
          float **fpI,      // Input
          float **fpO,      // Output
+         float *alpha,     // Alpha channel, can be NULL
          int iChannels,    // Number of channels
          int iWidth,       // Image width
          int iHeight,      // Image height
@@ -486,15 +486,13 @@ void rhf(int iDWin,        // Half size of patch
             float **fpODenoised = new float*[iChannels];
             for (int ii=0; ii < iChannels; ii++)
                 fpODenoised[ii] = new float[iwl];
-            
+            float *fTotalWeight = new float[iwl];
+
             for (int x=0 ; x < iWidth;  x++)
             {
                 /*Check if we need to denoise this pixel!!*/
                 // sum of weights
-                float fTotalWeight = 0.0f;
-                
-                // weights
-                float fWeight = 1.0f;
+                fpClear(fTotalWeight, 0.0f, iwl);
                 
                 //Reduce the size of comparison window near the boundary
                 int iDWin0 = MIN(iDWin,MIN(iWidth-1-x,
@@ -525,8 +523,6 @@ void rhf(int iDWin,        // Half size of patch
                                                                      iWidth);
                             if(fDifHist <  fDistance*df)
                             {
-                                fTotalWeight += fWeight;
-                                
                                 for (int is=-iDWin0; is <=iDWin0; is++) {
                                     int aiindex = (iDWin+is) * ihwl + iDWin;
                                     int ail = (j+is)*iWidth+i;
@@ -536,9 +532,11 @@ void rhf(int iDWin,        // Half size of patch
                                         int iindex = aiindex + ir;
                                         int il= ail +ir;
                                         
+                                        const float weight = alpha ? alpha[il] : 1.f;
+                                        fTotalWeight[iindex] += weight;
                                         for (int ii=0; ii < iChannels; ii++)
                                             fpODenoised[ii][iindex] +=
-                                            fWeight * fpI[ii][il];
+                                            weight* fpI[ii][il];
                                     }
                                 }
                             }
@@ -554,16 +552,14 @@ void rhf(int iDWin,        // Half size of patch
                         int iindex = aiindex + ir;
                         int il=ail+ir;
                         
+                        const float weight = alpha ? alpha[il] : 1.f;
+                        fTotalWeight[iindex] += weight;
                         for (int ii=0; ii < iChannels; ii++)
-                            fpODenoised[ii][iindex] += fWeight * fpI[ii][il];
+                            fpODenoised[ii][iindex] += weight * fpI[ii][il];
                     }
                 }
                 
-                fTotalWeight += fWeight;
                 
-                // normalize average value when fTotalweight is not near zero
-                if (fTotalWeight > fTiny) {
-                    
                     for (int is=-iDWin0; is <=iDWin0; is++) {
                         int aiindex = (iDWin+is) * ihwl + iDWin;
                         int ail=(y+is)*iWidth+x;
@@ -572,21 +568,22 @@ void rhf(int iDWin,        // Half size of patch
                             int iindex = aiindex + ir;
                             int il=ail+ ir;
                             
+                            const float weight = fTotalWeight[iindex];
 #pragma omp atomic
                             fpCount[il]++;
                             
                             for (int ii=0; ii < iChannels; ii++) {
 #pragma omp atomic
                                 fpO[ii][il] +=
-                                fpODenoised[ii][iindex]/fTotalWeight;
+                                weight == 0.f ? 0.f : fpODenoised[ii][iindex]/weight;
                             }
                         }
                     }
-                }//end if Tiny
             }
             
             for (int ii=0; ii < iChannels; ii++) delete[] fpODenoised[ii];
             delete[] fpODenoised;
+            delete[] fTotalWeight;
         }
     }
     

@@ -73,4 +73,8 @@ float** bicubic_interpolation(float** in, int nx, int ny, int nch,
 
 int compute_filter_mask(float** in, int x, int y, int nx, int ny, int nch);
 
+void alpha_mul (float *rgb, float *alpha, int np);
+
+void alpha_div (float *rgb, float *alpha, int np);
+
 #endif

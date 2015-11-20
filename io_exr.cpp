@@ -44,7 +44,7 @@ struct sRGB
 };
 
 
-float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
+float  *ReadImageEXR(const char fileName[], int *nx, int *ny, float *&alpha)
 {
     
     
@@ -61,12 +61,15 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
         
         *nx = width;
         *ny = height;
+
+        const bool hasAlpha = file.header().channels().findChannel("A") != NULL;
         
         // Allocate memory to read image bits. We will only try to read R, G and B
         // here, but additional channels like A (alpha) could also be added...
         float *pixelsR = new float[width * height];
         float *pixelsG = new float[width * height];
         float *pixelsB = new float[width * height];
+        alpha = hasAlpha ? new float[width * height] : NULL;
         
         // Now create the frame buffer to feed the image reader with. We will use
         // the Slice method flexibility to directly read R, G and B data in an
@@ -86,6 +89,13 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
                                       1, 1, // x/y sampling
                                       0.0));
         frameBuffer.insert("B", Slice(FLOAT, (char*)(&pixelsB[0] -
+                                                     dw.min.x -dw.min.y*width),
+                                      sizeof(float), 
+                                      width * sizeof(float),
+                                      1, 1, // x/y sampling
+                                      0.0));
+        if (alpha)
+            frameBuffer.insert("A", Slice(FLOAT, (char*)(alpha -
                                                      dw.min.x -dw.min.y*width),
                                       sizeof(float), 
                                       width * sizeof(float),
@@ -131,7 +141,7 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
 
 
 
-void WriteImageEXR(const char *name, float *pixels,
+void WriteImageEXR(const char *name, float *pixels, float *alpha,
                           int xRes, int yRes, int channelStride)
 {
     
@@ -140,8 +150,6 @@ void WriteImageEXR(const char *name, float *pixels,
     int yOffset = 0;
     int totalXRes = xRes;
     int totalYRes = yRes;
-    
-    float *alpha = NULL;
     
     Rgba *hrgba = new Rgba[xRes * yRes];
     for (int i = 0; i < xRes * yRes; ++i)

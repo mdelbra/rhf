@@ -28,9 +28,9 @@
 #define IO_EXR_H_
 
 
-float  *ReadImageEXR(const char fileName[], int *nx, int *ny);
+float  *ReadImageEXR(const char fileName[], int *nx, int *ny, float *&alpha);
 
-void WriteImageEXR(const char *name, float *pixels,
+void WriteImageEXR(const char *name, float *pixels, float *alpha,
                           int xRes, int yRes, int channelStride);
 
 void WriteImageEXR(const char *name, float **pixels,

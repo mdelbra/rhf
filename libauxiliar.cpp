@@ -53,7 +53,9 @@ float fiChiSquareNDfFloatDist(int *df, float *k0, float *k1, float *u0,
             
             float sum = (*ptr0 + *ptr1);
             
-            if(sum>1.00f)//to avoid problems due to little values.
+            if (sum>1.00f && //to avoid problems due to little values.
+                *ptrK0 != 0.f && // to avoid inf in empty pixels
+                *ptrK1 != 0.f) 
             {
                 float dif =  (*ptr0)*(*ptrK1) - (*ptr1)*(*ptrK0);
                 dist += (dif*dif)/((*ptrK0)*(*ptrK1)*sum);
@@ -592,3 +594,33 @@ void compute_knn_index(int k, float *ivect_dist, int *ovect_ind,  int n)
     
 }
 
+void alpha_mul (float *rgb, float *alpha, int np)
+{
+    for (int i = 0; i < np; ++i)
+    {
+        const float a = alpha[i];
+        rgb[i] *= a;
+        rgb[i+np] *= a;
+        rgb[i+2*np] *= a;
+    }
+}
+
+void alpha_div (float *rgb, float *alpha, int np)
+{
+    for (int i = 0; i < np; ++i)
+    {
+        const float a = alpha[i];
+        if (a == 0.f)
+        {
+            rgb[i] = 0;
+            rgb[i+np] = 0;
+            rgb[i+2*np] = 0;
+        }
+        else
+        {
+            rgb[i] /= a;
+            rgb[i+np] /= a;
+            rgb[i+2*np] /= a;
+        }
+    }
+}
