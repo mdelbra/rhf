@@ -1,6 +1,6 @@
 Ray Histogram Fusion
 ======================================================================
-Version 1.2 - January 10, 2015
+Version 1.3 - November 20, 2015
 
 by    Mauricio Delbracio <mdelbra@gmail.com>
       Pablo Muse

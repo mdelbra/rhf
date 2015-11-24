@@ -70,6 +70,7 @@
  * The core of the filtering algorithm is in libdenoising.cpp.
  *
  * HISTORY:
+ * - Version 1.3 - November 20, 2015
  * - Version 1.2 - January 10, 2015
  * - Version 1.1 - June 09, 2014
  *
