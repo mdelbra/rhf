@@ -690,7 +690,7 @@ static int io_png_write_raw(const char *fname, const void *data,
                 /* row loop */
                 for (i = 0; i < nx; i++) {
                     /* pixel loop */
-                    tmp = floor(*data_f32_ptr++ + .5);
+                    tmp = (float)floor(*data_f32_ptr++ + .5);
                     *idata_ptr = (png_byte) (tmp < 0. ? 0. :
                                              (tmp > 255. ? 255. : tmp));
                     idata_ptr += nc;

@@ -44,7 +44,7 @@ struct sRGB
 };
 
 
-float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
+float  *ReadImageEXR(const char fileName[], Box2i &dataWindow, Box2i &displayWindow, float *&alpha)
 {
     
     
@@ -54,19 +54,20 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
         InputFile file (fileName);
         
         // Get image dimensions.
-        Box2i dw = file.header().dataWindow();
+        dataWindow = file.header().dataWindow();
+        displayWindow = file.header().displayWindow();
         
-        int width = dw.max.x - dw.min.x + 1;
-        int height = dw.max.y - dw.min.y + 1;
+        int width = dataWindow.max.x - dataWindow.min.x + 1;
+        int height = dataWindow.max.y - dataWindow.min.y + 1;
         
-        *nx = width;
-        *ny = height;
+        const bool hasAlpha = file.header().channels().findChannel("A") != NULL;
         
         // Allocate memory to read image bits. We will only try to read R, G and B
         // here, but additional channels like A (alpha) could also be added...
         float *pixelsR = new float[width * height];
         float *pixelsG = new float[width * height];
         float *pixelsB = new float[width * height];
+        alpha = hasAlpha ? new float[width * height] : NULL;
         
         // Now create the frame buffer to feed the image reader with. We will use
         // the Slice method flexibility to directly read R, G and B data in an
@@ -74,19 +75,26 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
         FrameBuffer frameBuffer;
         
         frameBuffer.insert("R", Slice(FLOAT, (char*)(&pixelsR[0] -
-                                                     dw.min.x - dw.min.y*width),
+                                                     dataWindow.min.x - dataWindow.min.y*width),
                                       sizeof(float), 
                                       width * sizeof(float), 
                                       1, 1, // x/y sampling
                                       0.0));
         frameBuffer.insert("G", Slice(FLOAT, (char*)(&pixelsG[0] -
-                                                     dw.min.x -dw.min.y*width),
+                                                     dataWindow.min.x -dataWindow.min.y*width),
                                       sizeof(float), 
                                       width * sizeof(float),
                                       1, 1, // x/y sampling
                                       0.0));
         frameBuffer.insert("B", Slice(FLOAT, (char*)(&pixelsB[0] -
-                                                     dw.min.x -dw.min.y*width),
+                                                     dataWindow.min.x -dataWindow.min.y*width),
+                                      sizeof(float), 
+                                      width * sizeof(float),
+                                      1, 1, // x/y sampling
+                                      0.0));
+        if (alpha)
+            frameBuffer.insert("A", Slice(FLOAT, (char*)(alpha -
+                                                     dataWindow.min.x -dataWindow.min.y*width),
                                       sizeof(float), 
                                       width * sizeof(float),
                                       1, 1, // x/y sampling
@@ -99,10 +107,10 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
         
         
         try {
-            file.readPixels (dw.min.y, dw.max.y);
+            file.readPixels (dataWindow.min.y, dataWindow.max.y);
             
         }
-        catch (const std::exception &e) {
+        catch (const std::exception &) {
             data = NULL;
         }
         
@@ -122,43 +130,44 @@ float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
         return data;
     }
     
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         printf("Error reading file: %s\n",fileName);
         exit(-1);
     }
     
 }
 
-
-
-void WriteImageEXR(const char *name, float *pixels,
-                          int xRes, int yRes)
+float  *ReadImageEXR(const char fileName[], int *nx, int *ny)
 {
-    
-    //this can be a parameter to gerneralize the function
-    int xOffset = 0;
-    int yOffset = 0;
-    int totalXRes = xRes;
-    int totalYRes = yRes;
-    
-    float *alpha = NULL;
+    Box2i dataWindow, displayWindow;
+    float *alpha;
+    float *rgb = ReadImageEXR (fileName, dataWindow, displayWindow, alpha);
+    if (alpha)
+        delete[] alpha;
+    *nx = dataWindow.max.x - dataWindow.min.x + 1;
+    *ny = dataWindow.max.y - dataWindow.min.y + 1;
+    return rgb;
+}
+
+void WriteImageEXR(const char *name, float *pixels, float *alpha,
+                    const Imath::Box2i &dataWindow,
+                    const Imath::Box2i &displayWindow, int channelStride)
+{
+    const int xRes = dataWindow.max.x - dataWindow.min.x + 1;
+    const int yRes = dataWindow.max.y - dataWindow.min.y + 1;
     
     Rgba *hrgba = new Rgba[xRes * yRes];
     for (int i = 0; i < xRes * yRes; ++i)
     {
 
-        hrgba[i] = Rgba(pixels[i], pixels[i+xRes*yRes],pixels[i+2*xRes*yRes],
+        hrgba[i] = Rgba(pixels[i], pixels[i+channelStride],pixels[i+2*channelStride],
                         alpha ? alpha[i]: 1.f);
                         
     }
     
-    Box2i displayWindow(V2i(0,0), V2i(totalXRes-1, totalYRes-1));
-    Box2i dataWindow(V2i(xOffset, yOffset), 
-                     V2i(xOffset + xRes - 1, yOffset + yRes - 1));
-    
     try {
         RgbaOutputFile file(name, displayWindow, dataWindow, WRITE_RGBA);
-        file.setFrameBuffer(hrgba - xOffset - yOffset * xRes, 1, xRes);
+        file.setFrameBuffer(hrgba - dataWindow.min.x - dataWindow.min.y * xRes, 1, xRes);
         file.writePixels(yRes);
     }
     catch (const std::exception &e) {
@@ -205,6 +214,15 @@ void WriteImageEXR(const char *name, float **pixels,
     }
     
     delete[] hrgba;
+}
+
+void WriteImageEXR(const char *name, float *pixels, int nx, int ny)
+{
+    Imath::Box2i dw;
+    dw.min.x = dw.min.y = 0;
+    dw.max.x = nx-1;
+    dw.max.y = ny-1;
+    WriteImageEXR(name, pixels, NULL, dw, dw, nx*ny);
 }
 
 void writeMultiImageEXR (const char *fileName,
@@ -291,7 +309,6 @@ void writeMultiImageEXR (const char *fileName,
     
 }
 
-
 float * readMultiImageEXR(const char fileName[],
                           int *width, int *height, int *nbins)
 {
@@ -337,7 +354,8 @@ float * readMultiImageEXR(const char fileName[],
             
             frameBuffer.insert(ch_name, 
                                Slice(FLOAT, 
-                                     (char*)(&data[i*nhnc]), 
+                                     (char*)(&data[i*nhnc] -
+                                     dw.min.x -dw.min.y**width), 
                                      sizeof(float), 
                                      (*width) * sizeof(float)));
             
@@ -350,7 +368,7 @@ float * readMultiImageEXR(const char fileName[],
             file.readPixels (dw.min.y, dw.max.y);
             
         }
-        catch (const std::exception &e) {
+        catch (const std::exception &) {
             data = NULL;
         }
         
@@ -359,7 +377,7 @@ float * readMultiImageEXR(const char fileName[],
         return data;
         
     }
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         printf("Error reading file: %s\n",fileName);
         exit(-1);
     }

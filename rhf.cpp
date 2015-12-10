@@ -70,6 +70,7 @@
  * The core of the filtering algorithm is in libdenoising.cpp.
  *
  * HISTORY:
+ * - Version 1.3 - November 20, 2015
  * - Version 1.2 - January 10, 2015
  * - Version 1.1 - June 09, 2014
  *
@@ -83,7 +84,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <windows.h>
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+    FILETIME    file_time;
+    SYSTEMTIME  system_time;
+    ULARGE_INTEGER ularge;
+
+    GetSystemTime(&system_time);
+    SystemTimeToFileTime(&system_time, &file_time);
+    ularge.LowPart = file_time.dwLowDateTime;
+    ularge.HighPart = file_time.dwHighDateTime;
+
+    ULONGLONG epoch = 11644473600000000ULL;
+    tp->tv_sec = (long) ((ularge.QuadPart - epoch) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+
+    return 0;
+}
+#else
 #include <sys/time.h>
+#endif
 
 #include "libdenoising.h"
 #include "io_exr.h"
@@ -134,7 +157,7 @@ static void usage(const char* name)
 
 static void parse_arguments(program_argums *param, int argc, char *argv[])
 {
-    char *OptionString;
+    char *OptionString = NULL;
     char OptionChar;
     int i;
     
@@ -279,7 +302,16 @@ int main(int argc, char **argv) {
     int nx,ny,nc;
     float *d_v = NULL;
     
-    d_v = ReadImageEXR(param.input, &nx, &ny);
+    float *alpha = NULL;
+    Imath::Box2i dataWindow, displayWindow;
+    d_v = ReadImageEXR(param.input, dataWindow, displayWindow, alpha);
+    nx = dataWindow.max.x - dataWindow.min.x + 1;
+    ny = dataWindow.max.y - dataWindow.min.y + 1;
+
+    // Divide colors by alpha, could be controlled by a new parameter
+    if (alpha)
+        alpha_div (d_v, alpha, nx*ny);
+
     nc = 3; //Assume 3 color channels
     
     
@@ -335,6 +367,12 @@ int main(int argc, char **argv) {
     fpH = readMultiImageEXR(param.hist_file,
                             &nx_h, &ny_h, &nc_h);
     
+    if (dataWindow.max.x - dataWindow.min.x + 1 != nx_h ||
+        dataWindow.max.y - dataWindow.min.y + 1 != ny_h)
+    {
+        error ("The histogram file and the input file don't have the same data window.");
+        exit (-1);
+    }
     
     float **fpHisto = new float*[nc_h];
     for (int ii=0; ii < nc_h; ii++)
@@ -352,22 +390,27 @@ int main(int argc, char **argv) {
                    param.knn,
                    param.nscales,
                    fpHisto,
-                   fpI, fpO, d_c, d_w, d_h, nc_h);
+                   fpI, fpO, alpha, d_c, d_w, d_h, nc_h);
     
     gettimeofday(&tim, NULL);
     double t2=tim.tv_sec+(tim.tv_usec/1000000.0);
     printf("Filtering Time: %.2lf seconds\n", t2-t1);
 
+    // Multiply colors by alpha
+    if (alpha)
+        alpha_mul (denoised, alpha, d_w*d_h);
     
     // save EXR denoised image
-    WriteImageEXR(param.output, denoised, d_w, d_h);
-    
+    const int channelStride = d_c == 1 ? 0 : d_w*d_h;
+    WriteImageEXR(param.output, denoised, alpha, dataWindow, displayWindow, channelStride);
+
     delete[] fpHisto;
     delete[] fpH;
     delete[] fpI;
     delete[] fpO;
     delete[] d_v;
     delete[] denoised;
+    delete[] alpha;
     
     return 0;
     

@@ -53,7 +53,9 @@ float fiChiSquareNDfFloatDist(int *df, float *k0, float *k1, float *u0,
             
             float sum = (*ptr0 + *ptr1);
             
-            if(sum>1.00f)//to avoid problems due to little values.
+            if (sum>1.00f && //to avoid problems due to little values.
+                *ptrK0 != 0.f && // to avoid inf in empty pixels
+                *ptrK1 != 0.f) 
             {
                 float dif =  (*ptr0)*(*ptrK1) - (*ptr1)*(*ptrK0);
                 dist += (dif*dif)/((*ptrK0)*(*ptrK1)*sum);
@@ -142,7 +144,7 @@ static void gaussian_kernel(float * kernel, int ksize, float sigma, float mean)
     for(i=0;i<ksize;i++)
     {
         val = ( (float) i - mean ) / sigma;
-        kernel[i] = exp( -0.5 * val * val );
+        kernel[i] = (float)exp( -0.5 * val * val );
         sum += kernel[i];
     }
     
@@ -246,7 +248,7 @@ float** gaussian_sampler( float** in, int nx, int ny, int nch,
          xx  is the corresponding x-value in the original size image.
          xc  is the integer value, the pixel coordinate of xx.
          */
-        xx = ((float) x +0.5) / scale;
+        xx = ((float) x +0.5f) / scale;
         /* coordinate (0.0,0.0) is in the center of pixel (0,0),
          so the pixel with xc=0 get the values of xx from -0.5 to 0.5 */
         xc = (int) floor( xx );
@@ -293,7 +295,7 @@ float** gaussian_sampler( float** in, int nx, int ny, int nch,
          yy  is the corresponding x-value in the original size image.
          yc  is the integer value, the pixel coordinate of xx.
          */
-        yy = ((float) y + 0.5) / scale;
+        yy = ((float) y + 0.5f) / scale;
 
         /* coordinate (0.0,0.0) is in the center of pixel (0,0),
          so the pixel with yc=0 get the values of yy from -0.5 to 0.5 */
@@ -375,10 +377,10 @@ void keys(float *c,float t,float a)
     
     t2 = t*t;
     at = a*t;
-    c[0] = a*t2*(1.0-t);
-    c[1] = (2.0*a+3.0 - (a+2.0)*t)*t2 - at;
-    c[2] = ((a+2.0)*t - a-3.0)*t2 + 1.0;
-    c[3] = a*(t-2.0)*t2 + at;
+    c[0] = a*t2*(1.f-t);
+    c[1] = (2.f*a+3.f - (a+2.f)*t)*t2 - at;
+    c[2] = ((a+2.f)*t - a-3.f)*t2 + 1.f;
+    c[3] = a*(t-2.f)*t2 + at;
 }
 
 /*------------------------ MAIN MODULE ---------------------------------*/
@@ -411,7 +413,7 @@ float** bicubic_interpolation(float** in, int nx, int ny, int nch,
     
     for (x=0;x<nsx;x++) {
         
-        xp = ( (float)x + 0.5 )/zx;
+        xp = ( (float)x + 0.5f )/zx;
         
         if (xp<0. || xp>(float)nx) 
             for (y=0;y<ny;y++) 
@@ -454,7 +456,7 @@ float** bicubic_interpolation(float** in, int nx, int ny, int nch,
         
         for (y=0;y<nsy;y++) {
             
-            yp = ( (float)y + 0.5 )/zy;
+            yp = ( (float)y + 0.5f )/zy;
             
             if (yp<0. || yp>(float)ny) 
                 for (x=0;x<nsx;x++) 
@@ -592,3 +594,33 @@ void compute_knn_index(int k, float *ivect_dist, int *ovect_ind,  int n)
     
 }
 
+void alpha_mul (float *rgb, float *alpha, int np)
+{
+    for (int i = 0; i < np; ++i)
+    {
+        const float a = alpha[i];
+        rgb[i] *= a;
+        rgb[i+np] *= a;
+        rgb[i+2*np] *= a;
+    }
+}
+
+void alpha_div (float *rgb, float *alpha, int np)
+{
+    for (int i = 0; i < np; ++i)
+    {
+        const float a = alpha[i];
+        if (a == 0.f)
+        {
+            rgb[i] = 0;
+            rgb[i+np] = 0;
+            rgb[i+2*np] = 0;
+        }
+        else
+        {
+            rgb[i] /= a;
+            rgb[i+np] /= a;
+            rgb[i+2*np] /= a;
+        }
+    }
+}

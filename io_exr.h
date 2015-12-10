@@ -27,11 +27,19 @@
 #ifndef IO_EXR_H_
 #define IO_EXR_H_
 
+#include <ImathBox.h>
 
-float  *ReadImageEXR(const char fileName[], int *nx, int *ny);
+float  *ReadImageEXR(const char fileName[], int *nx,
+                    int *ny);
 
-void WriteImageEXR(const char *name, float *pixels,
-                          int xRes, int yRes);
+float  *ReadImageEXR(const char fileName[], Imath::Box2i &dataWindow,
+                    Imath::Box2i &displayWindow, float *&alpha);
+
+void WriteImageEXR(const char *name, float *pixels, int nx, int ny);
+
+void WriteImageEXR(const char *name, float *pixels, float *alpha,
+                    const Imath::Box2i &dataWindow,
+                    const Imath::Box2i &displayWindow, int channelStride);
 
 void WriteImageEXR(const char *name, float **pixels,
                    int xRes, int yRes);

@@ -12,7 +12,7 @@ CXX=c++
 COPT	= -O3 -Wall
 
 # Linking flags
-LDFLAGS   =  -lIlmImf -lHalf -lpng -pthread
+LDFLAGS?=-lIlmImf -lHalf -lpng -pthread
 
 ifeq (${OMP},1)
     COPT += -fopenmp
@@ -24,9 +24,9 @@ PNG_INCLUDE=/usr/local/include
 PNG_LIB=/usr/local/lib
 
 # OpenEXR
-EXR_INCLUDE1=/usr/local/include/OpenEXR
+EXR_INCLUDE1?=/usr/local/include/OpenEXR
 EXR_INCLUDE2=/usr/include/OpenEXR/
-EXR_LIB=/usr/local/lib
+EXR_LIB?=/usr/local/lib
 
 # C++ optimization flags
 CXXOPT	= $(COPT)
